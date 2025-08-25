@@ -1,4 +1,3 @@
-````markdown
 # 🌌 Sistema Solar 3D  
 
 ---
