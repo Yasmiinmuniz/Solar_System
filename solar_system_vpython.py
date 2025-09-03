@@ -1,7 +1,4 @@
-from vpython import (
-    canvas, vector, color, sphere, rate, local_light, textures,
-    label, ring, curve, scene, mag, norm
-)
+from vpython import *
 import math
 import time
 
@@ -38,7 +35,7 @@ bodies_config = [
     },
     {
         "name":"Venus", "radius_km":6051.8, "color":color.orange,
-        "distance_km":108_209_475, "orbital_period_days":224.701, "rotation_period_hours":-5832.5,  # retrógrada
+        "distance_km":108_209_475, "orbital_period_days":224.701, "rotation_period_hours":-5832.5,  
         "tilt_deg":177.4, "texture":None, "has_rings":False
     },
     {
@@ -61,6 +58,16 @@ bodies_config = [
         "distance_km":1_426_666_422, "orbital_period_days":10_759.22, "rotation_period_hours":10.7,
         "tilt_deg":26.73, "texture":None, "has_rings":True
     },
+    {
+        "name":"Uranus", "radius_km":40895, "color":color.cyan,
+        "distance_km":2_870_658_186, "orbital_period_days":30_688.5, "rotation_period_hours":-17.24,
+        "tilt_deg":97.77, "texture":None, "has_rings":True
+    },
+    {
+        "name":"Neptune", "radius_km":39623, "color":color.blue,
+        "distance_km":4_498_396_441, "orbital_period_days":60_182, "rotation_period_hours":16.11,
+        "tilt_deg":28.32, "texture":None, "has_rings":True
+    }
 ]
 
 # Lua para a Terra (bruto)
@@ -109,12 +116,18 @@ class Planet:
                           radius=self.a, thickness=self.a*0.002,
                           color=color.gray(0.3), visible=SHOW_ORBITS)
 
-        # Anéis opcionais (Saturno)
+        # Anéis opcionais (Saturno, Urano, Netuno)
         self.rings = None
         if self.has_rings:
+            ring_color = color.gray(0.7)
+            if self.name == "Uranus":
+                ring_color = color.cyan
+            elif self.name == "Neptune":
+                ring_color = color.blue
+                
             self.rings = ring(pos=self.body.pos, axis=vector(0, math.cos(self.tilt), 0),
                               radius=self.R*2.2, thickness=self.R*0.15,
-                              color=color.gray(0.7))
+                              color=ring_color)
 
         # Label
         self.lbl = label(pos=self.body.pos, text=self.name, xoffset=0, yoffset=40,
@@ -226,9 +239,18 @@ def format_info(p):
         f"Rotação: {p.rotT/3600:.2f} h{' (retrógrada)' if p.retrograde else ''}"
     )
 
-info = label(pos=vector(0, sun.radius*2.0, 0), text="Selecione um corpo (clique) ou use 1..6",
-             xoffset=0, yoffset=0, height=13, color=color.white, box=True, opacity=0.2,
-             visible=INFO_VISIBLE)
+info = label(
+    pos=vector(scene.width-200, 100, 0), 
+    text="Informações aqui",
+    xoffset=0, yoffset=0,
+    height=14,
+    border=10,
+    font='monospace',
+    box=True,
+    line=True,
+    background=color.white,
+    pixel_pos=True
+)
 
 selected = None
 
@@ -310,7 +332,7 @@ def keydown(evt):
     elif s.lower() == "i":
         INFO_VISIBLE = not INFO_VISIBLE
         info.visible = INFO_VISIBLE
-    elif s in ["1","2","3","4","5","6"]:
+    elif s in ["1","2","3","4","5","6","7","8"]:
         idx = int(s)-1
         if 0 <= idx < len(planets):
             p = planets[idx]
@@ -336,5 +358,4 @@ while True:
 
     sun_label.pos = sun.pos
 
-    info.pos = scene.center + vector(0, scene.range*0.1, 0)
     info.text = info.text 
