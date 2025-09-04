@@ -2,6 +2,8 @@
 
 ---
 
+![Sistema Solar](img/sistemaSolar.png)
+
 ## Descrição do Projeto
 Este projeto é uma simulação interativa do **Sistema Solar em 3D**, desenvolvida em **Python** utilizando a biblioteca [VPython](https://vpython.org/).  
 
@@ -37,7 +39,7 @@ A aplicação exibe os planetas orbitando o Sol, permitindo **interação via mo
 - **Teclado**:  
   - `Espaço` → Pausa/Retoma simulação.  
   - `+` / `-` → Acelera/Desacelera tempo.  
-  - `1..6` → Focar em Mercúrio … Saturno.  
+  - `1..8` → Focar em Mercúrio … Netuno.  
   - `O` → Mostrar/Ocultar órbitas.  
   - `L` → Mostrar/Ocultar labels.  
   - `T` → Ativar/Desativar trilhas.  
@@ -70,12 +72,16 @@ python solar_system_vpython.py
 ## Estrutura do Projeto
 
 ```
-sistema-solar
- ├── solar_system_vpython.py   # Código principal da simulação
- └── README.md                 # Documentação do projeto
+sistema-solar/
+│
+├── solar_system_vpython.py # Código principal da simulação
+├── README.md # Documentação do projeto
+└── img/ # Pasta de imagens
+    └── sistemaSolar.png # Imagem do sistema solar          
 ```
 
 ---
+
 
 ## Autoras
 

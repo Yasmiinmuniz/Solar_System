@@ -3,7 +3,7 @@ import math
 import time
 
 # ---------- Configuração de cena global ----------
-scene.title = "3D Interactive Solar System — VPython"
+scene.title = "Sistema Solar Interativo 3D"
 scene.width = 1280
 scene.height = 720
 scene.background = color.black
@@ -19,6 +19,8 @@ SHOW_ORBITS = True
 SHOW_LABELS = True
 SHOW_TRAILS = True
 INFO_VISIBLE = True
+AUTO_ROTATE = False
+ROTATION_SPEED = 0.1
 
 # Fatores de escala visual (arbitrários, para visibilidade)
 RADIUS_SCALE = 0.0005     
@@ -29,42 +31,42 @@ DIST_SCALE   = 0.0000015
 # Distâncias: semieixo maior (km); Raios: raio equatorial (km); Períodos: dias/horas
 bodies_config = [
     {
-        "name":"Mercury", "radius_km":2439.7, "color":color.gray(0.7),
+        "name":"Mercúrio", "radius_km":2439.7, "color":color.gray(0.7),
         "distance_km":57_909_050, "orbital_period_days":87.969, "rotation_period_hours":1407.6,
         "tilt_deg":0.03, "texture":None, "has_rings":False
     },
     {
-        "name":"Venus", "radius_km":6051.8, "color":color.orange,
+        "name":"Vênus", "radius_km":6051.8, "color":color.orange,
         "distance_km":108_209_475, "orbital_period_days":224.701, "rotation_period_hours":-5832.5,  
         "tilt_deg":177.4, "texture":None, "has_rings":False
     },
     {
-        "name":"Earth", "radius_km":6378.1, "color":color.white,
+        "name":"Terra", "radius_km":6378.1, "color":color.white,
         "distance_km":149_598_262, "orbital_period_days":365.256, "rotation_period_hours":23.934,
         "tilt_deg":23.44, "texture":textures.earth, "has_rings":False
     },
     {
-        "name":"Mars", "radius_km":3396.2, "color":color.red,
+        "name":"Marte", "radius_km":3396.2, "color":color.red,
         "distance_km":227_943_824, "orbital_period_days":686.980, "rotation_period_hours":24.623,
         "tilt_deg":25.19, "texture":None, "has_rings":False
     },
     {
-        "name":"Jupiter", "radius_km":71492, "color":color.white,
+        "name":"Júpiter", "radius_km":71492, "color":color.white,
         "distance_km":778_340_821, "orbital_period_days":4332.59, "rotation_period_hours":9.925,
         "tilt_deg":3.13, "texture":None, "has_rings":False
     },
     {
-        "name":"Saturn", "radius_km":60268, "color":color.yellow,
+        "name":"Saturno", "radius_km":60268, "color":color.yellow,
         "distance_km":1_426_666_422, "orbital_period_days":10_759.22, "rotation_period_hours":10.7,
         "tilt_deg":26.73, "texture":None, "has_rings":True
     },
     {
-        "name":"Uranus", "radius_km":40895, "color":color.cyan,
+        "name":"Urano", "radius_km":40895, "color":color.cyan,
         "distance_km":2_870_658_186, "orbital_period_days":30_688.5, "rotation_period_hours":-17.24,
         "tilt_deg":97.77, "texture":None, "has_rings":True
     },
     {
-        "name":"Neptune", "radius_km":39623, "color":color.blue,
+        "name":"Netuno", "radius_km":39623, "color":color.blue,
         "distance_km":4_498_396_441, "orbital_period_days":60_182, "rotation_period_hours":16.11,
         "tilt_deg":28.32, "texture":None, "has_rings":True
     }
@@ -72,7 +74,7 @@ bodies_config = [
 
 # Lua para a Terra (bruto)
 moon_config = {
-    "name":"Moon", "radius_km":1737.4, "color":color.gray(0.8),
+    "name":"Lua", "radius_km":1737.4, "color":color.gray(0.8),
     "distance_km":384_400, "orbital_period_days":27.321661, "rotation_period_hours":655.7,
     "tilt_deg":6.68
 }
@@ -177,7 +179,8 @@ class Planet:
 class Moon:
     def __init__(self, cfg, parent_planet: Planet):
         self.name = cfg["name"]
-        self.R = cfg["radius_km"] * RADIUS_SCALE
+        MOON_SIZE_MULTIPLIER = 2.5
+        self.R = cfg["radius_km"] * RADIUS_SCALE * MOON_SIZE_MULTIPLIER
         self.a = cfg["distance_km"] * DIST_SCALE
         self.T = cfg["orbital_period_days"] * 24 * 3600
         self.rotT = cfg["rotation_period_hours"] * 3600
@@ -225,7 +228,7 @@ for cfg in bodies_config:
     p = Planet(cfg, sun)
     planets.append(p)
 # Adicionar Lua à Terra
-earth = next(p for p in planets if p.name=="Earth")
+earth = next(p for p in planets if p.name=="Terra")
 earth_moon = earth.add_moon(moon_config)
 
 # ---------- Painel de informações ----------
@@ -241,7 +244,7 @@ def format_info(p):
 
 info = label(
     pos=vector(scene.width-200, 100, 0), 
-    text="Informações aqui",
+    text="Selecione um astro para exibir informações",
     xoffset=0, yoffset=0,
     height=14,
     border=10,
@@ -251,6 +254,41 @@ info = label(
     background=color.white,
     pixel_pos=True
 )
+
+controls_text = """
+CONTROLES INTERATIVOS
+
+MOUSE:
+• Arrastar → Orbitar câmera
+• Scroll → Zoom
+• Clique → Selecionar corpo
+
+TECLADO:
+[ESPAÇO] - Pausar/Retomar
+[1-8] - Focar planeta
+[O] - Órbitas ON/OFF
+[L] - Labels ON/OFF  
+[T] - Trilhas ON/OFF
+[R] - Reset câmera
+[I] - Info ON/OFF
+[M] - Focar Lua
+[ ] ] - Veloc. rotação
+"""
+
+controls_menu = label(
+    pos=vector(scene.width-200, scene.height-150, 0),
+    text=controls_text,
+    xoffset=0, yoffset=0,
+    height=12,
+    border=15,
+    font='monospace',
+    box=True,
+    line=True,
+    background=color.white,
+    color=color.black,
+    pixel_pos=True
+)
+
 
 selected = None
 
@@ -280,13 +318,46 @@ def toggle_trails():
             p.body.retain = 500
 
 def reset_camera():
+    global AUTO_ROTATE
     scene.center = vector(0,0,0)
     scene.range = SUN_RADIUS_KM * RADIUS_SCALE * 15
+    AUTO_ROTATE = True
 
 def focus_on(p: Planet):
+    global AUTO_ROTATE
     scene.center = p.body.pos
-    # definir alcance relativo à distância do planeta
-    scene.range = max(p.R*20, p.a*0.6)
+    
+    target_range = max(p.R * 8, 0.05)
+    
+    steps = 30   
+    for i in range(steps):
+        rate(120)  
+        scene.range = scene.range + (target_range - scene.range) * 0.2
+    
+    offset = vector(p.R*5, p.R*3, p.R*5)
+    scene.forward = (p.body.pos - offset).norm() 
+    AUTO_ROTATE = False
+
+def focus_on_moon(m: Moon):
+    global AUTO_ROTATE
+    scene.center = m.body.pos
+    target_range = max(m.R * 25, 0.05)
+    
+    relative_dir = norm(m.body.pos - earth.body.pos)
+    offset = relative_dir * (m.R * 30)
+    
+    steps = 30
+    for i in range(steps):
+        rate(120)
+        scene.range += (target_range - scene.range) * 0.2
+    
+    scene.forward = -relative_dir
+    AUTO_ROTATE = False
+
+def auto_rotate_camera(dt):
+    if AUTO_ROTATE:
+        angle = ROTATION_SPEED * dt
+        scene.forward = scene.forward.rotate(angle=angle, axis=vector(0, 1, 0))
 
 def select_body_by_click():
     global selected
@@ -309,7 +380,7 @@ def select_body_by_click():
             if obj is m.body:
                 selected = m  
                 info.text = f"{m.name} (Lua da Terra)\nRaio: {m.R / RADIUS_SCALE:,.0f} km\nDistância à Terra: {m.a / DIST_SCALE:,.0f} km".replace(",", ".")
-                focus_on(p)
+                focus_on_moon(m)
                 return
 
 def keydown(evt):
@@ -329,6 +400,12 @@ def keydown(evt):
         toggle_trails()
     elif s.lower() == "r":
         reset_camera()
+    elif s.lower() == "m":
+        focus_on_moon(earth_moon)
+        info.text = f"Lua da Terra\n" \
+                    f"Raio: {earth_moon.R / RADIUS_SCALE:,.0f} km\n" \
+                    f"Distância à Terra: {earth_moon.a / DIST_SCALE:,.0f} km".replace(",", ".")
+
     elif s.lower() == "i":
         INFO_VISIBLE = not INFO_VISIBLE
         info.visible = INFO_VISIBLE
@@ -357,5 +434,5 @@ while True:
         p.update(dt)
 
     sun_label.pos = sun.pos
-
+    auto_rotate_camera(real_dt)
     info.text = info.text 
